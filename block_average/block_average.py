@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from warnings import warn
 
 
 def estimate_variance(data):
@@ -7,7 +8,8 @@ def estimate_variance(data):
 
     Implements the technique of Flyvbjerg and Peterson
     J. Chem. Phys. 91, 461 (1989). Also described in
-    Appendix D of Frenkel and Smit.
+    Appendix D of Frenkel and Smit. This function implements
+    equation D.3.4 of Frenkel and Smit.
 
     The data should be provided as a numpy ndarray with
     shape=(npoints,). The function performs N blocking
@@ -44,7 +46,8 @@ def block_average(data):
 
     Implements the technique of Flyvbjerg and Peterson
     J. Chem. Phys. 91, 461 (1989). Also described in
-    Appendix D of Frenkel and Smit.
+    Appendix D of Frenkel and Smit. This function implements
+    equation D.3.4 of Frenkel and Smit.
 
     The data should be provided as a numpy ndarray with
     shape=(npoints,). The function performs N blocking
