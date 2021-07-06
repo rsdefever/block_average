@@ -1,10 +1,44 @@
-# coding: utf-8
-
-author = "Ryan DeFever"
-modified = "2020-01-09"
-
 import numpy as np
 import math
+from warnings import warn
+
+
+def estimate_variance(data):
+    """Return an estimate of the variance (\sigma^2)
+
+    Implements the technique of Flyvbjerg and Peterson
+    J. Chem. Phys. 91, 461 (1989). Also described in
+    Appendix D of Frenkel and Smit. This function implements
+    equation D.3.4 of Frenkel and Smit.
+
+    The data should be provided as a numpy ndarray with
+    shape=(npoints,). The function performs N blocking
+    operations, where the block size is 2^N and the
+    maximum number of blocking operations is determined
+    from the number of points in ``data``.
+
+    The "plateau" in the variance estimate as a function
+    of the number of blocking operations is identified as
+    the variance estimate at the fewest blocking operations
+    that falls within the var_est +/- var_err for all
+    greater number of blocking operations
+
+    Parameters:
+    -----------
+    data : numpy.ndarray, shape=(npoints,)
+        numpy array with shape (npoints,) where npoints
+        is the number of data point in the sample
+
+    Returns:
+    -------
+    var_est : float
+        estimate of the variance at the plateau
+    var_err : float
+        estimate of the uncertainty on the variance at the plateau
+    """
+    means_est, vars_est, vars_err = block_average(data)
+    return id_plateau_error(vars_est, vars_err)
+
 
 
 def block_average(data):
@@ -13,7 +47,8 @@ def block_average(data):
 
     Implements the technique of Flyvbjerg and Peterson
     J. Chem. Phys. 91, 461 (1989). Also described in
-    Appendix D of Frenkel and Smit.
+    Appendix D of Frenkel and Smit. This function implements
+    equation D.3.4 of Frenkel and Smit.
 
     The data should be provided as a numpy ndarray with
     shape=(npoints,). The function performs N blocking
@@ -86,3 +121,35 @@ def block_average(data):
         vars_err.append(var_err)
 
     return np.asarray(means), np.asarray(vars_est), np.asarray(vars_err)
+
+
+def id_plateau_error(vars_est, vars_err):
+    """Identify the plateau in the uncertainty estimate the return the
+    variance and the uncertainty on the variance.
+
+    Parameters
+    ----------
+    vars_est : np.ndarray, shape=(n_avg_ops,)
+        estimates of the variances of the average from different
+        numbers of blocking operations
+    vars_err : np.ndarray, shape=(n_avg_ops,)
+        estimates of the error in the varances from different
+        number of blocking operations
+
+    Returns
+    -------
+    var_est : float
+        estimate of the variance at the plateau
+    var_err : float
+        estimate of the uncertainty on the variance at the plateau
+    """
+    for i in range(len(vars_est)):
+        if ( vars_est[i] > np.max(vars_est[i:] - vars_err[i:]) and
+                vars_est[i] < np.min(vars_est[i:] + vars_err[i:]) ):
+            if i == len(vars_est) - 1:
+                warn("The uncertainty estimate did not plateau before the end "
+                     "of the sample. Your simulation may not be sufficiently "
+                     "long."
+                )
+            return vars_est[i], vars_err[i]
+
